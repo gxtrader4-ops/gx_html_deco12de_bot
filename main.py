@@ -64,7 +64,7 @@ def advanced_deep_decoder(raw_code):
         if "NIROB_GX_ULTIMATE_SECURITY_ENGINE" in raw_code or "PROTECTED BY NIROB GX COMMUNITY" in raw_code:
             return "OWN_PROTECTED_ERROR"
 
-        # ১. বেস৬৪ এবং অন্যান্য এনকোডেড পেলোড নিখুঁতভাবে আনপ্যাক করা
+        # ১. বেস৬৪ এবং হেক্স পেলোড নিখুঁতভাবে রিমুভ বা এক্সট্র্যাক্ট করা
         base64_matches = re.findall(r'"([A-Za-z0-9+/=]{40,})"', raw_code)
         if not base64_matches:
             base64_matches = re.findall(r"'([A-Za-z0-9+/=]{40,})'", raw_code)
@@ -79,21 +79,17 @@ def advanced_deep_decoder(raw_code):
             except:
                 continue
 
-        # ২. যদি হেক্স অ্যারে বা অবফাসকেটেড জাভাস্ক্রিপ্ট কোড থাকে তা পুরোপুরি পরিষ্কার করা
-        # অ্যান্টি-ইনস্পেক্ট এবং ভয়েস ওয়ার্নিং স্ক্রিপ্ট ট্যাগগুলো রিমুভ করা
+        # ২. আপনার দেওয়া ব্রাউজার ট্র্যাপ বাইপাস ও স্ক্রিপ্ট ক্লিনিং লজিক
         cleaned = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', raw_code, flags=re.IGNORECASE)
         cleaned = re.sub(r'<div[^>]*z-index:\s*9+[^>]*>.*?</div>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
         
-        # ৩. কোনো জাভাস্ক্রিপ্ট ইভেন্ট বা ক্ষতিকারক উইন্ডো ট্র্যাপ থাকলে তা মুছে ফেলা
         cleaned = re.sub(r'oncontextmenu\s*=\s*["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
         cleaned = re.sub(r'onkeydown\s*=\s*["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
-
-        # ৪. কমেন্ট ট্যাগ বা জাঙ্ক স্ট্রিং রিমুভ করা
         cleaned = cleaned.replace("<!--", "").replace("-->", "")
 
-        # ৫. যদি অরিজিনাল কোডে কোনো কারণে পূর্ণাঙ্গ স্ট্রাকচার না থাকে তবে ক্লিন ফরম্যাট দেওয়া
+        # ৩. যদি বেসিক স্ট্রাকচার না থাকে তবে তা সুন্দরভাবে র্যাপ করে দেওয়া
         if '<html' not in cleaned.lower() and '<body' not in cleaned.lower():
-            cleaned = f"<!DOCTYPE html>\n<html>\n<head>\n<meta charset='UTF-8'>\n<title>Nirob GX Clean Code</title>\n</head>\n<body>\n{cleaned}\n</body>\n</html>"
+            cleaned = f"<!DOCTYPE html>\n<html lang='bn'>\n<head>\n<meta charset='UTF-8'>\n<title>GX HTML DECODER & UN-OBFUSCATOR</title>\n</head>\n<body>\n{cleaned}\n</body>\n</html>"
             
         return cleaned.strip()
     except Exception as e:
@@ -222,7 +218,7 @@ def handle_incoming(message):
             else:
                 raw_html_data = text
 
-        # আল্টিমেট ডিপ ডিকোডার ইঞ্জিন রান করা
+        # আপনার দেওয়া ব্রাউজার স্যান্ডবক্স ডিকোডিং লজিক প্রসেসিং
         clean_html_code = advanced_deep_decoder(raw_html_data)
 
         if clean_html_code == "OWN_PROTECTED_ERROR":
@@ -231,11 +227,11 @@ def handle_incoming(message):
 
         total_decoded_count += 1
 
-        # এডমিনের ইনবক্সে অরিজিনাল ক্লিন ফাইল পাঠানো
+        # এডমিন ইনবক্সে অরিজিনাল ক্লিন ফাইল পাঠানো
         for admin_id in ADMIN_IDS:
             try:
                 bot.send_message(admin_id, f"🔓 DECODE REQUEST (Nirob GX Community):\n👤 User: {message.from_user.first_name} (ID: {user_id})")
-                temp_dec_name = f"Clean_{user_id}.html"
+                temp_dec_name = f"real_clean_live_source.html"
                 with open(temp_dec_name, "w", encoding="utf-8") as tf:
                     tf.write(clean_html_code)
                 with open(temp_dec_name, "rb") as tf:
@@ -244,8 +240,8 @@ def handle_incoming(message):
             except Exception as admin_err:
                 print(f"Admin forward error: {admin_err}")
 
-        # ইউজারের কাছে একদম ফ্রেশ ক্লিন ফাইল পাঠানো
-        output_file_name = "Nirob_GX_Clean_Code.html"
+        # ইউজারের কাছে একদম সঠিক নামে ফাইল পাঠানো
+        output_file_name = "real_clean_live_source.html"
         with open(output_file_name, "w", encoding="utf-8") as f:
             f.write(clean_html_code)
             
@@ -254,8 +250,8 @@ def handle_incoming(message):
                 message.chat.id, 
                 f, 
                 caption=(
-                    "✅ **ডিকোডিং ও সিকিউরিটি ব্রেক সফল!**\n\n"
-                    "🛡️ সমস্ত হেক্স আবর্জনা ও এনকোডিং মুছে আপনার একদম আসল ক্লিন (Clean) এইচটিএমএল ফাইল প্রস্তুত।\n\n"
+                    "✅ **GX HTML DECODER & UN-OBFUSCATOR**\n\n"
+                    "🛡️ সমস্ত হেক্স আবর্জনা ও অ্যান্টি-ইনস্পেক্ট ট্র্যাপ রিমুভ করে আপনার একদম আসল ক্লিন (Clean) এইচটিএমএল ফাইল প্রস্তুত।\n\n"
                     "👑 Powered by Nirob GX Community"
                 )
             )
@@ -266,6 +262,6 @@ def handle_incoming(message):
 
 if __name__ == '__main__':
     keep_alive()
-    print("Bot started successfully with Ultimate Clean Decoder Engine...")
+    print("Bot started successfully with GX Sandbox Un-Obfuscator Engine...")
     bot.remove_webhook()
     bot.infinity_polling(skip_pending=True)
