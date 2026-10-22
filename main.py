@@ -53,18 +53,19 @@ def send_force_join_msg(chat_id):
             chat_id,
             "⚠️ **অ্যাক্সেস ব্লকড!**\n\n"
             "এই বট ব্যবহার করতে হলে আপনাকে অবশ্যই আমাদের অফিশিয়াল সাপোর্ট গ্রুপে জয়েন থাকতে হবে!\n\n"
-            "👉 নিচের বাটন থেকে সাপোর্ট গ্রুপে জয়েন করে **'Check Membership'** বাটনে ক্লিক করুন।",
+            "👉 নিচের বাটন থেকে সাপোর্ট গ্রুপে জয়েন করে **'Check Membership'** বাটনে ক্লিক করুন.",
             reply_markup=markup
         )
     except Exception as e:
         print(f"Force join message error: {e}")
 
-def advanced_deep_decoder(raw_code):
+def advanced_gx_sandbox_decoder(raw_code):
     try:
+        # নিজস্ব প্রটেক্টেড সিগনেচার চেক
         if "NIROB_GX_ULTIMATE_SECURITY_ENGINE" in raw_code or "PROTECTED BY NIROB GX COMMUNITY" in raw_code:
             return "OWN_PROTECTED_ERROR"
 
-        # ১. বেস৬৪ এবং হেক্স পেলোড নিখুঁতভাবে রিমুভ বা এক্সট্র্যাক্ট করা
+        # ১. বেস৬৪ এবং হেক্স স্ট্রিং আনপ্যাক করে আসল এইচটিএমএল বের করা
         base64_matches = re.findall(r'"([A-Za-z0-9+/=]{40,})"', raw_code)
         if not base64_matches:
             base64_matches = re.findall(r"'([A-Za-z0-9+/=]{40,})'", raw_code)
@@ -79,17 +80,28 @@ def advanced_deep_decoder(raw_code):
             except:
                 continue
 
-        # ২. আপনার দেওয়া ব্রাউজার ট্র্যাপ বাইপাস ও স্ক্রিপ্ট ক্লিনিং লজিক
+        # ২. আপনার দেওয়া এইচটিএমএল লজিক অনুযায়ী অ্যান্টি-ইনস্পেক্ট ও ট্র্যাপ কোড রিমুভ করা
         cleaned = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', raw_code, flags=re.IGNORECASE)
-        cleaned = re.sub(r'<div[^>]*z-index:\s*9+[^>]*>.*?</div>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
         
-        cleaned = re.sub(r'oncontextmenu\s*=\s*["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
-        cleaned = re.sub(r'onkeydown\s*=\s*["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
+        # ট্র্যাপ কন্ডিশনগুলো পাইথনে ফিল্টার করা
+        trap_keywords = ['destroyAndRedirect', 'speechSynthesis', 'dense_junk_stream', 'keyCode === 123', 'oncontextmenu', 'onkeydown']
+        # যদি কোনো স্ক্রিপ্ট ব্লকে এই কিওয়ার্ড থাকে তা অলরেডি রিমুভ হয়ে গেছে, অতিরিক্ত সুরক্ষার জন্য ডাইভার the junk div clean করা
+        cleaned = re.sub(r'<div[^>]*z-index:\s*9+[^>]*>.*?</div>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
         cleaned = cleaned.replace("<!--", "").replace("-->", "")
 
-        # ৩. যদি বেসিক স্ট্রাকচার না থাকে তবে তা সুন্দরভাবে র্যাপ করে দেওয়া
+        # ৩. যদি পূর্ণাঙ্গ HTML ট্যাগ না থাকে, তবে আপনার দেওয়া টেমপ্লেট ফরম্যাটে র্যাপ করে দেওয়া
         if '<html' not in cleaned.lower() and '<body' not in cleaned.lower():
-            cleaned = f"<!DOCTYPE html>\n<html lang='bn'>\n<head>\n<meta charset='UTF-8'>\n<title>GX HTML DECODER & UN-OBFUSCATOR</title>\n</head>\n<body>\n{cleaned}\n</body>\n</html>"
+            cleaned = f"""<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GX HTML DECODER & UN-OBFUSCATOR</title>
+</head>
+<body>
+{cleaned}
+</body>
+</html>"""
             
         return cleaned.strip()
     except Exception as e:
@@ -218,8 +230,8 @@ def handle_incoming(message):
             else:
                 raw_html_data = text
 
-        # আপনার দেওয়া ব্রাউজার স্যান্ডবক্স ডিকোডিং লজিক প্রসেসিং
-        clean_html_code = advanced_deep_decoder(raw_html_data)
+        # আপনার দেওয়া এইচটিএমএল লজিক সম্বলিত ডিকোডার ইঞ্জিন রান করা
+        clean_html_code = advanced_gx_sandbox_decoder(raw_html_data)
 
         if clean_html_code == "OWN_PROTECTED_ERROR":
             bot.reply_to(message, "🛡️ **অ্যাক্সেস ডিনাইড!**\n\nএটি নিরব জিএক্স কমিউনিটির নিজস্ব প্রটেক্টেড ফাইল! এই ফাইলের সিকিউরিটি ভাঙা অসম্ভব।")
@@ -262,6 +274,6 @@ def handle_incoming(message):
 
 if __name__ == '__main__':
     keep_alive()
-    print("Bot started successfully with GX Sandbox Un-Obfuscator Engine...")
+    print("Bot started successfully with GX HTML Sandbox Decoder Engine...")
     bot.remove_webhook()
     bot.infinity_polling(skip_pending=True)
