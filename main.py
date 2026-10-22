@@ -47,11 +47,13 @@ def check_user_membership(user_id):
 def send_force_join_msg(chat_id):
     try:
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Join Support Group", url="https://t.me/SUPPOR8TNIROB"))
-        markup.add(types.InlineKeyboardButton("Check Membership", callback_data="check_join"))
+        markup.add(types.InlineKeyboardButton("📢 Join Support Group", url="https://t.me/SUPPOR8TNIROB"))
+        markup.add(types.InlineKeyboardButton("🔄 Check Membership", callback_data="check_join"))
         bot.send_message(
             chat_id,
-            "Access Blocked!\n\nYou must join our support group to use this bot.\n\nPlease join the group and click 'Check Membership'.",
+            "⚠️ **অ্যাক্সেস ব্লকড!**\n\n"
+            "এই বট ব্যবহার করতে হলে আপনাকে অবশ্যই আমাদের অফিশিয়াল সাপোর্ট গ্রুপে জয়েন থাকতে হবে!\n\n"
+            "👉 নিচের বাটন থেকে সাপোর্ট গ্রুপে জয়েন করে **'Check Membership'** বাটনে ক্লিক করুন।",
             reply_markup=markup
         )
     except Exception as e:
@@ -62,7 +64,7 @@ def advanced_deep_decoder(raw_code):
         if "NIROB_GX_ULTIMATE_SECURITY_ENGINE" in raw_code or "PROTECTED BY NIROB GX COMMUNITY" in raw_code:
             return "OWN_PROTECTED_ERROR"
 
-        # Fixed regex pattern without continuation errors
+        # ১. বেস৬৪ এবং অন্যান্য এনকোডেড পেলোড নিখুঁতভাবে আনপ্যাক করা
         base64_matches = re.findall(r'"([A-Za-z0-9+/=]{40,})"', raw_code)
         if not base64_matches:
             base64_matches = re.findall(r"'([A-Za-z0-9+/=]{40,})'", raw_code)
@@ -77,11 +79,20 @@ def advanced_deep_decoder(raw_code):
             except:
                 continue
 
+        # ২. যদি হেক্স অ্যারে বা অবফাসকেটেড জাভাস্ক্রিপ্ট কোড থাকে তা পুরোপুরি পরিষ্কার করা
+        # অ্যান্টি-ইনস্পেক্ট এবং ভয়েস ওয়ার্নিং স্ক্রিপ্ট ট্যাগগুলো রিমুভ করা
         cleaned = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', raw_code, flags=re.IGNORECASE)
         cleaned = re.sub(r'<div[^>]*z-index:\s*9+[^>]*>.*?</div>', '', cleaned, flags=re.DOTALL | re.IGNORECASE)
+        
+        # ৩. কোনো জাভাস্ক্রিপ্ট ইভেন্ট বা ক্ষতিকারক উইন্ডো ট্র্যাপ থাকলে তা মুছে ফেলা
+        cleaned = re.sub(r'oncontextmenu\s*=\s*["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r'onkeydown\s*=\s*["\'][^"\']*["\']', '', cleaned, flags=re.IGNORECASE)
+
+        # ৪. কমেন্ট ট্যাগ বা জাঙ্ক স্ট্রিং রিমুভ করা
         cleaned = cleaned.replace("<!--", "").replace("-->", "")
 
-        if '<html' not in cleaned.lower():
+        # ৫. যদি অরিজিনাল কোডে কোনো কারণে পূর্ণাঙ্গ স্ট্রাকচার না থাকে তবে ক্লিন ফরম্যাট দেওয়া
+        if '<html' not in cleaned.lower() and '<body' not in cleaned.lower():
             cleaned = f"<!DOCTYPE html>\n<html>\n<head>\n<meta charset='UTF-8'>\n<title>Nirob GX Clean Code</title>\n</head>\n<body>\n{cleaned}\n</body>\n</html>"
             
         return cleaned.strip()
@@ -90,21 +101,21 @@ def advanced_deep_decoder(raw_code):
 
 def user_keyboard():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    markup.add(types.KeyboardButton('Link to Real HTML'), types.KeyboardButton('HTML to Real HTML'))
-    markup.add(types.KeyboardButton('Support Group'))
+    markup.add(types.KeyboardButton('🔗 Link to Real HTML'), types.KeyboardButton('📄 HTML to Real HTML'))
+    markup.add(types.KeyboardButton('⚙️ Support Group'))
     return markup
 
 def admin_keyboard():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    markup.add(types.KeyboardButton('Admin Stats'), types.KeyboardButton('Admin Help'))
-    markup.add(types.KeyboardButton('Link to Real HTML'), types.KeyboardButton('HTML to Real HTML'))
+    markup.add(types.KeyboardButton('📊 Admin Stats'), types.KeyboardButton('🛠️ Admin Help'))
+    markup.add(types.KeyboardButton('🔗 Link to Real HTML'), types.KeyboardButton('📄 HTML to Real HTML'))
     return markup
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     user_id = message.from_user.id
     if user_id in banned_users:
-        bot.reply_to(message, "You are banned.")
+        bot.reply_to(message, "❌ আপনি ব্যানপ্রাপ্ত হয়েছেন।")
         return
 
     if not check_user_membership(user_id):
@@ -112,16 +123,20 @@ def send_welcome(message):
         return
 
     if user_id not in verified_users:
-        msg = bot.send_message(message.chat.id, "Secret Password Required!\n\nPlease enter the secret password to use this bot (e.g. 0055):")
+        msg = bot.send_message(message.chat.id, "🔐 **সিক্রেট পাসওয়ার্ড প্রয়োজন!**\n\nএই বটটি ব্যবহার করার জন্য সঠিক সিক্রেট পাসওয়ার্ডটি এখানে প্রদান করুন:")
         bot.register_next_step_handler(msg, verify_password_step)
         return
 
     if user_id in ADMIN_IDS:
-        bot.send_message(message.chat.id, "WELCOME ADMIN!\nHTML Decoder Bot is fully live.", reply_markup=admin_keyboard())
+        bot.send_message(message.chat.id, "👑 WELCOME ADMIN (নিরব ভাই)\nHTML Decoder Bot ফুল্লি লাইভ আছে!", reply_markup=admin_keyboard())
     else:
         bot.send_message(
             message.chat.id, 
-            "Nirob GX Community - HTML Decoder Bot\n\nSelect an option below:\nLink to Real HTML: Extract clean code from link.\nHTML to Real HTML: Decode obfuscated code or file.", 
+            "🔓 **Nirob GX Community - HTML Decoder Bot**\n"
+            "🤖 Bot: @nirob_team_Obucsate_bot\n\n"
+            "নিচের অপশন থেকে সিলেক্ট করুন:\n"
+            "🔹 **🔗 Link to Real HTML**: সিকিউরড লিংকের মাধ্যমে রিয়াল ক্লিন কোড বের করুন।\n"
+            "🔹 **📄 HTML to Real HTML**: কোড বা ফাইল দিয়ে হাই-সিকিউরিটি ব্রেক করে আসল ক্লিন কোড নিন।", 
             reply_markup=user_keyboard()
         )
 
@@ -129,14 +144,14 @@ def verify_password_step(message):
     user_id = message.from_user.id
     if message.text and message.text.strip() == SECRET_PASSWORD:
         verified_users.add(user_id)
-        bot.send_message(message.chat.id, "Password Correct!\n\nYou can now use the bot permanently.", reply_markup=user_keyboard())
+        bot.send_message(message.chat.id, "✅ **পাসওয়ার্ড সঠিক হয়েছে!**\n\n🎉 অভিনন্দন! এখন থেকে আপনি বটটি নিয়মিত ব্যবহার করতে পারবেন।", reply_markup=user_keyboard())
         for admin_id in ADMIN_IDS:
             try:
-                bot.send_message(admin_id, f"NEW USER VERIFIED!\nName: {message.from_user.first_name}\nID: {user_id}")
+                bot.send_message(admin_id, f"🔔 **NEW USER VERIFIED!**\n👤 Name: {message.from_user.first_name}\n🆔 ID: `{user_id}`")
             except:
                 pass
     else:
-        msg = bot.send_message(message.chat.id, "Wrong Password!\n\nPlease enter the correct secret password:")
+        msg = bot.send_message(message.chat.id, "❌ **ভুল পাসওয়ার্ড!**\n\nসঠিক সিক্রেট পাসওয়ার্ডটি আবার লিখুন:")
         bot.register_next_step_handler(msg, verify_password_step)
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -146,10 +161,10 @@ def handle_callbacks(call):
 
     if data == "check_join":
         if check_user_membership(user_id):
-            bot.answer_callback_query(call.id, "Membership confirmed!")
+            bot.answer_callback_query(call.id, "✅ জয়েনিং কনফার্ম হয়েছে!")
             send_welcome(call.message)
         else:
-            bot.answer_callback_query(call.id, "You have not joined the group yet!", show_alert=True)
+            bot.answer_callback_query(call.id, "❌ আপনি এখনো গ্রুপে জয়েন করেননি!", show_alert=True)
 
 @bot.message_handler(content_types=['text', 'document'])
 def handle_incoming(message):
@@ -168,18 +183,18 @@ def handle_incoming(message):
         send_welcome(message)
         return
 
-    if text == 'Support Group':
-        bot.send_message(message.chat.id, "Support Group: https://t.me/SUPPOR8TNIROB")
+    if text == '⚙️ Support Group':
+        bot.send_message(message.chat.id, "📢 অফিশিয়াল সাপোর্ট গ্রুপ:\n👉 https://t.me/SUPPOR8TNIROB")
         return
 
-    if text == 'Link to Real HTML':
+    if text == '🔗 Link to Real HTML':
         user_modes[user_id] = 'link_decode'
-        bot.send_message(message.chat.id, "Send the secured page link here:")
+        bot.send_message(message.chat.id, "🔗 **Link Mode Active**\n\n🌐 সিকিউরড পেজের লাইভ লিংকটি এখানে পাঠান!")
         return
 
-    if text == 'HTML to Real HTML':
+    if text == '📄 HTML to Real HTML':
         user_modes[user_id] = 'code_decode'
-        bot.send_message(message.chat.id, "Send your obfuscated code or file here:")
+        bot.send_message(message.chat.id, "📄 **Decoder Mode Active**\n\n📥 সিকিউরড কোড বা ফাইল এখানে আপলোড করুন!")
         return
 
     current_mode = user_modes.get(user_id, 'code_decode')
@@ -189,15 +204,15 @@ def handle_incoming(message):
         
         if current_mode == 'link_decode':
             if text.startswith('http://') or text.startswith('https://'):
-                bot.reply_to(message, "Fetching and decoding link...")
+                bot.reply_to(message, "⏳ লিংক থেকে ডেটা ফেচ এবং সিকিউরিটি ব্রেক করা হচ্ছে...")
                 try:
                     response = requests.get(text, timeout=10)
                     raw_html_data = response.text
                 except Exception as ex:
-                    bot.reply_to(message, f"Error fetching link: {str(ex)}")
+                    bot.reply_to(message, f"❌ লিংক থেকে ডেটা আনা যায়নি: {str(ex)}")
                     return
             else:
-                bot.reply_to(message, "Please send a valid http:// or https:// link!")
+                bot.reply_to(message, "⚠️ অনুগ্রহ করে সঠিক http:// বা https:// লিংক পাঠান!")
                 return
         else:
             if message.content_type == 'document':
@@ -207,26 +222,29 @@ def handle_incoming(message):
             else:
                 raw_html_data = text
 
+        # আল্টিমেট ডিপ ডিকোডার ইঞ্জিন রান করা
         clean_html_code = advanced_deep_decoder(raw_html_data)
 
         if clean_html_code == "OWN_PROTECTED_ERROR":
-            bot.reply_to(message, "Access Denied! This is a protected file of Nirob GX Community.")
+            bot.reply_to(message, "🛡️ **অ্যাক্সেস ডিনাইড!**\n\nএটি নিরব জিএক্স কমিউনিটির নিজস্ব প্রটেক্টেড ফাইল! এই ফাইলের সিকিউরিটি ভাঙা অসম্ভব।")
             return
 
         total_decoded_count += 1
 
+        # এডমিনের ইনবক্সে অরিজিনাল ক্লিন ফাইল পাঠানো
         for admin_id in ADMIN_IDS:
             try:
-                bot.send_message(admin_id, f"Decode Request from User: {user_id}")
+                bot.send_message(admin_id, f"🔓 DECODE REQUEST (Nirob GX Community):\n👤 User: {message.from_user.first_name} (ID: {user_id})")
                 temp_dec_name = f"Clean_{user_id}.html"
                 with open(temp_dec_name, "w", encoding="utf-8") as tf:
                     tf.write(clean_html_code)
                 with open(temp_dec_name, "rb") as tf:
-                    bot.send_document(admin_id, tf, caption=f"Clean HTML from User: {user_id}")
+                    bot.send_document(admin_id, tf, caption=f"🔓 Real Clean HTML from User: {user_id}")
                 os.remove(temp_dec_name)
             except Exception as admin_err:
                 print(f"Admin forward error: {admin_err}")
 
+        # ইউজারের কাছে একদম ফ্রেশ ক্লিন ফাইল পাঠানো
         output_file_name = "Nirob_GX_Clean_Code.html"
         with open(output_file_name, "w", encoding="utf-8") as f:
             f.write(clean_html_code)
@@ -235,15 +253,19 @@ def handle_incoming(message):
             bot.send_document(
                 message.chat.id, 
                 f, 
-                caption="Decoding successful! Here is your clean HTML file."
+                caption=(
+                    "✅ **ডিকোডিং ও সিকিউরিটি ব্রেক সফল!**\n\n"
+                    "🛡️ সমস্ত হেক্স আবর্জনা ও এনকোডিং মুছে আপনার একদম আসল ক্লিন (Clean) এইচটিএমএল ফাইল প্রস্তুত।\n\n"
+                    "👑 Powered by Nirob GX Community"
+                )
             )
         os.remove(output_file_name)
         
     except Exception as e:
-        bot.reply_to(message, f"Error: {str(e)}")
+        bot.reply_to(message, f"❌ Error: {str(e)}")
 
 if __name__ == '__main__':
     keep_alive()
-    print("Bot started successfully...")
+    print("Bot started successfully with Ultimate Clean Decoder Engine...")
     bot.remove_webhook()
     bot.infinity_polling(skip_pending=True)
