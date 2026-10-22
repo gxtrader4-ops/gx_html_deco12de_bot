@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from flask import Flask, request
 import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -68,7 +69,7 @@ def callback_inline(call):
             total_banned = len(db["banned"])
             bot.send_message(call.message.chat.id, f"📊 **Bot Statistics:**\n\n👤 Total Users: {total_users}\n🚫 Banned Users: {total_banned}")
 
-# টেক্সট, ডকুমেন্ট ও ব্যান/আনব্যান কমান্ড হ্যান্ডলার
+# টেক্সট, ডকুমেন্ট ও লিংক ফেচিং হ্যান্ডলার
 @bot.message_handler(func=lambda message: True, content_types=['text', 'document'])
 def handle_incoming_message(message):
     user_id = message.from_user.id
@@ -117,7 +118,26 @@ def handle_incoming_message(message):
         html_content = downloaded_file.decode('utf-8', errors='ignore')
 
     elif message.text:
-        html_content = message.text
+        text = message.text.strip()
+        # যদি লিংক দেওয়া হয়, তবে রিকোয়েস্ট পাঠিয়ে পেজের সোর্স কোড ফেচ করবে
+        if text.startswith("http://") or text.startswith("https://"):
+            bot.reply_to(message, "⏳ লিংক থেকে রিয়েল সোর্স কোড ফেচ করা হচ্ছে...")
+            try:
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+                response = requests.get(text, headers=headers, timeout=15)
+                if response.status_code == 200:
+                    html_content = response.text
+                    file_name = "real_clean_live_source.html"
+                else:
+                    bot.reply_to(message, f"❌ সার্ভার থেকে রেসপন্স পাওয়া যায়নি। Status Code: {response.status_code}")
+                    return
+            except Exception as e:
+                bot.reply_to(message, f"❌ লিংক ফেচ করতে সমস্যা হয়েছে: {str(e)}")
+                return
+        else:
+            html_content = text
 
     if html_content:
         bot.reply_to(message, "⏳ স্যান্ডবক্স ট্র্যাপ বাইপাস করে ক্লিন DOM এক্সট্র্যাক্ট করা হচ্ছে...")
