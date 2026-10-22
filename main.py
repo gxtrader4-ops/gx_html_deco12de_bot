@@ -62,7 +62,11 @@ def advanced_deep_decoder(raw_code):
         if "NIROB_GX_ULTIMATE_SECURITY_ENGINE" in raw_code or "PROTECTED BY NIROB GX COMMUNITY" in raw_code:
             return "OWN_PROTECTED_ERROR"
 
-        base64_matches = re.findall(r'['\"]([A-Za-z0-9+/=]{40,})['\"]', raw_code)
+        # Fixed regex pattern without continuation errors
+        base64_matches = re.findall(r'"([A-Za-z0-9+/=]{40,})"', raw_code)
+        if not base64_matches:
+            base64_matches = re.findall(r"'([A-Za-z0-9+/=]{40,})'", raw_code)
+
         for b64_str in base64_matches:
             try:
                 decoded_bytes = base64.b64decode(b64_str)
